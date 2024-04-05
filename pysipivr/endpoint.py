@@ -142,12 +142,12 @@ class Endpoint:
                     Call.CallParam.CallEndState=CallEndState.NOGONE   
                 elif response.status_code==486:
                     Call.CallParam.CallEndState=CallEndState.BUSYHERE  
-                if response.status_code==603:
+                elif response.status_code==603:
                     Call.CallParam.CallEndState=CallEndState.DECLINE   
                 Call.endCall()
                     
                     
-            elif str(response.status_code)[0] in ["3","4","5","6"]:
+            elif str(response.status_code)[0] in ["2","3","4","5","6"]:
                 if Call or Account:
                     AckPath=Call.CallParam.getTargetPath or Account.sipUserUri
                     self.libUa.responseACK(response,AckPath) 
