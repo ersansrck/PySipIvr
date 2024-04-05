@@ -132,14 +132,18 @@ class Endpoint:
                     self.libUa.responseOKINVITE(Call,Requests,response)   
                     
                     
-            elif response.status_code in [408,486,603]:
+            elif response.status_code in [404,408,410,486,603]:
                 self.libUa.responseACK(Call,response) 
-                if response.status_code==603:
-                    Call.CallParam.CallEndState=CallEndState.DECLINE   
+                if response.status_code==404:
+                    Call.CallParam.CallEndState=CallEndState.NOTFOUND
+                elif response.status_code==408:
+                    Call.CallParam.CallEndState=CallEndState.NOTHERE   
+                elif response.status_code==410:
+                    Call.CallParam.CallEndState=CallEndState.NOGONE   
                 elif response.status_code==486:
                     Call.CallParam.CallEndState=CallEndState.BUSYHERE  
-                else:
-                    Call.CallParam.CallEndState=CallEndState.NOTHERE   
+                if response.status_code==603:
+                    Call.CallParam.CallEndState=CallEndState.DECLINE   
                 Call.endCall()
                     
                     
