@@ -119,17 +119,6 @@ class AUDIOSTREAMER:
         if self.InputSleep>0:
             self.StreamOutData.write(pcmarray+pcmarraynull)
             return pcmarray+pcmarraynull
-        #played False ise None dönder
-    def read2(self,chunk): 
-        pcmarray=bytes() 
-        pcmarraynull=bytes()
-        if self.StreamPlayed:
-            pcmarray=self.StreamPlayed.ReadWave.readframes(chunk) 
-        pcmarraynull=bytes([0x00] * (chunk-len(pcmarray)))
-        self.InputSleep-=1/self.StreamOutData.WriteWave.getframerate()*len(pcmarraynull) 
-        if self.InputSleep>0:
-            self.StreamOutData.write(pcmarray+pcmarraynull)
-            return pcmarray+pcmarraynull
     def write(self,data):
         self.StreamInData.write(data) 
 
