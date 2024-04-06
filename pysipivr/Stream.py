@@ -134,17 +134,19 @@ class AUDIOSTREAMER:
         self.StreamInData.write(data) 
 
 
-    def save(self,savefile):  
-        Output=self.StreamOutData.readWAVE()
+    def save(self,savefile,onlyIn=False):  
         Input=self.StreamInData.readWAVE() 
-        sound1=np.frombuffer(Output.readframes(Output.getnframes()), dtype=np.int16)
-        sound2=np.frombuffer(Input.readframes(Input.getnframes()), dtype=np.int16)
-        max_len = max(len(sound1), len(sound2))
-        sound1 = np.pad(sound1, (0, max_len - len(sound1)), 'constant', constant_values=(0))
-        sound2 = np.pad(sound2, (0, max_len - len(sound2)), 'constant', constant_values=(0))
-        mixed_sound = sound1 + sound2
-        mixed_sound = np.int16(mixed_sound / 2)
+        if not onlyIn:
+            Output=self.StreamOutData.readWAVE()
+            sound1=np.frombuffer(Output.readframes(Output.getnframes()), dtype=np.int16)
+            sound2=np.frombuffer(Input.readframes(Input.getnframes()), dtype=np.int16)
+            max_len = max(len(sound1), len(sound2))
+            sound1 = np.pad(sound1, (0, max_len - len(sound1)), 'constant', constant_values=(0))
+            sound2 = np.pad(sound2, (0, max_len - len(sound2)), 'constant', constant_values=(0))
+            mixed_sound = sound1 + sound2
+            mixed_sound = np.int16(mixed_sound / 2)
+        else: 
+            mixed_sound=np.frombuffer(Input.readframes(Input.getnframes()), dtype=np.int16)
         wavfile.write(savefile, 8000, mixed_sound)
-
         
         
