@@ -213,7 +213,7 @@ class Endpoint:
             self.sleep()   
             ######################################################################################################################################
             for accUid,acc in list(self.libUa.Accounts.items()): 
-                if acc.AccRegConf.accRegState==AccountRegState.CREATE  or acc.AccRegConf.accStatusTimeout(self.libUa.SipConfig.EXPIRESTIME): 
+                if not acc.AccRegConf.accIsActive and not acc.AccRegConf.accIsWaiting:#if acc.AccRegConf.accRegState==AccountRegState.CREATE  or acc.AccRegConf.accStatusTimeout(self.libUa.SipConfig.EXPIRESTIME): 
                     self.LogConfig.debug(f"Kullanıcı Kayıt Ediliyor")
                     acc.AccRegConf.accStatusWait() 
                     self.requests(self.libUa.SipConfig.createREGISTER(acc))  
