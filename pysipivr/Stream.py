@@ -12,23 +12,22 @@ class STREAM:
         self.rate=rate
         self.width=width
         self.ioBytes=io.BytesIO() 
-        self.WriteWave=self.createWAVE() 
-        self.ReadWave=None
+        self.WriteWave=self.createWAVE()  
     @classmethod
     def FileToStream(cls,filepath,new_rate,new_channel,new_samplewidth):
         sr, data = wavfile.read(filepath,"rb") 
         num_samples = round(len(data) * float(new_rate) / sr)
         data_resampled = resample(data, num_samples).astype(np.int16).tobytes()
         cls=cls(new_channel,new_rate,new_samplewidth)
-        cls.write(data_resampled)
-        cls.ReadWave=cls.readWAVE()
+        cls.write(data_resampled) 
         return cls
-    def readWAVE(self):
-        self.ioBytes.seek(0)
-        self.ReadWave=wave.open(self.ioBytes, 'rb')
-        return self.ReadWave
+    
+    def ReadWave(self):
+        self.ioBytes.seek(0)  
+        wf=wave.open(self.ioBytes, 'rb') 
+        return wf
     def createWAVE(self): 
-        self.ioBytes.seek(0)
+        self.ioBytes.seek(0, io.SEEK_END)
         wav_dosyasi=wave.open(self.ioBytes, 'wb')
         wav_dosyasi.setnchannels(self.chanell)
         wav_dosyasi.setsampwidth(self.width)
@@ -36,13 +35,69 @@ class STREAM:
         return wav_dosyasi
     def write(self,data):
         self.WriteWave.writeframes(data)  
-    def __del__(self):
-        if self.ReadWave:
-            self.ReadWave.close()
+        
+    def read(self,endChunk,startChunk=0):
+        wf=self.ReadWave()
+        if startChunk!=0:
+            wf.readframes(startChunk)
+        data=wf.readframes(endChunk)
+        wf.close()
+        return data
+    
+    
+    def __del__(self): 
         if self.WriteWave:
             self.WriteWave.close()
         if not self.ioBytes.closed:
             self.ioBytes.close()
+            
+            
+            
+            
+class SPEAKER(STREAM):
+    def __init__(self, chanell=1, rate=8000, width=2) -> None:
+        super().__init__(chanell, rate, width) 
+        self._minMuteEg=None
+        
+        self.procLastSeconds=2
+        self._lastTenSpeakCheck=[]
+        
+
+    
+    def write(self, data): 
+        self.WriteWave.writeframes(data) 
+        self._addlastEg(data)
+        print(self.speakCheck,"  ",end="\r") 
+        
+    def getEgValue(self,data):  
+        return round(np.sqrt(np.mean(np.abs(np.frombuffer(data,dtype=np.int16)**2) )  ),1)
+        
+    def _addlastEg(self,data): 
+        self._lastTenSpeakCheck.append(self.getEgValue(data)<=self.minMuteEg)
+        self._lastTenSpeakCheck=self._lastTenSpeakCheck[-60:]#[-60:]
+        
+    @property
+    def speakCheck(self): 
+        if not self.minMuteEg or isinstance(self.minMuteEg,bool):
+            check=True
+        else:
+            check=len(self._lastTenSpeakCheck)*0.8>sum(self._lastTenSpeakCheck)
+        return check
+    @property
+    def totalSeconds(self):
+        return round(self.WriteWave.getnframes()/self.WriteWave.getframerate(),1)
+    @property
+    def minMuteEg(self): 
+        if self.totalSeconds<1:
+            return True
+        endchunk=int(self.WriteWave.getframerate()*self.procLastSeconds)
+        startsChunk=self.WriteWave.getnframes()-endchunk
+        startsChunk=startsChunk>0 and startsChunk or 0 
+        
+        np_data=np.frombuffer(self.read(endchunk,startsChunk),dtype=np.int16)
+        self._minMuteEg=round(np.mean([self.getEgValue(np_data[i:i+178]) for i in range(0,len(np_data),178)]),1)
+        return self._minMuteEg
+
 
 
 
